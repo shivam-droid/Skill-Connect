@@ -4,6 +4,8 @@ import authRoutes from './backend/routes/authRoutes.js';
 import cors from 'cors';
 import serverConfig from './backend/config/serverConfig.js';
 import serviceTypeRoutes from './backend/routes/serviceTypeRoutes.js';
+import userRoutes from './backend/routes/userRoutes.js';
+import listingRoutes from './backend/routes/listingRoutes.js';
 
 
 const app = express();
@@ -12,6 +14,9 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/servicetypes', serviceTypeRoutes);
+app.use('/api/users', userRoutes); // Ensure userRoutes is imported from the correct path
+app.use('/api/listings',listingRoutes);
+
 
 mongoose.connect(serverConfig.MONGO_URI)
   .then(() => {

@@ -1,64 +1,60 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import jwt from "jsonwebtoken";
+import AuthService from "../services/auth-service.js";
 
 const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
 
+const authService = new AuthService();
+
 export const registerUser = async (req, res) => {
-  const { name, email, password, role, selectedServiceType } = req.body;
 
-  if (!name || !email || !password || !role) {
-    return res.status(400).json({ error: 'Please fill all required fields' });
+  try {
+    const user = await authService.registerUser(req.body);
+
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      selectedServiceType: user.selectedServiceType,
+      token,
+    });
+  } catch (error) {
+    console.log("Something went wrong in the controller layer");
+    res.status(500).json({
+      data: {},
+      success: false,
+      message: "Not able to create a new user",
+      err: error.message,
+    });
   }
-
-  if (role === 'provider' && !selectedServiceType) {
-    return res.status(400).json({ error: 'Service type required for provider' });
-  }
-
-  const userExists = await User.findOne({ email });
-  if (userExists) return res.status(400).json({ error: 'User already exists' });
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const user = await User.create({
-    name,
-    email,
-    password: hashedPassword,
-    role,
-    selectedServiceType: role === 'provider' ? selectedServiceType : null
-  });
-
-  const token = generateToken(user._id);
-
-  res.status(201).json({
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    selectedServiceType: user.selectedServiceType,
-    token
-  });
 };
 
 export const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
+    const user = await authService.loginUser(email, password);
 
-  const user = await User.findOne({ email }).populate('selectedServiceType');
-  if (!user) return res.status(400).json({ error: 'Invalid credentials' });
+    const token = generateToken(user._id);
 
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
-
-  const token = generateToken(user._id);
-
-  res.status(200).json({
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    selectedServiceType: user.selectedServiceType,
-    token
-  });
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      selectedServiceType: user.selectedServiceType,
+      token,
+    });
+  } catch (error) {
+    console.log("Something went wrong in the controller layer");
+    return res.status(500).json({
+      data: {},
+      success: false,
+      message: "Not able to fetch users",
+      err: error.message,
+    });
+  }
 };

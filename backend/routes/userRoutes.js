@@ -1,9 +1,10 @@
 import express from 'express';
-import { getUserProfile } from '../controllers/userController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect } from '../middlewares/authMiddleware.js';
+import { getAllUsers,getUserProfile } from '../controllers/userController.js';
 
 const router = express.Router();
 
 router.get('/profile', protect, getUserProfile);
+router.get('/',getAllUsers)
 
 export default router;
